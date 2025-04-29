@@ -1,0 +1,21 @@
+networks
+  extern:
+    external: true
+
+services:
+  bitwarden:
+    image: vaultwarden/server:latest
+    container_name: bitwarden
+    networks:
+      extern:
+        aliases:
+          - bitwarden
+    volumes:
+       - ./data/app:/data
+    env_file:
+      - ./.env
+    expose:
+      - "80"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
