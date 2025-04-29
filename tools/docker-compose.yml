@@ -1,26 +1,24 @@
-version: '2'
 
 networks:
+  # Wichtig: bei ersten Start Netzwerk erstellen: docker network create extern
   extern:
-    external:
-      name: extern
-
+    external: true
 
 services:
   nginx:
-    image: nginxproxy/nginx-proxy
+    image: nginxproxy/nginx-proxy # : 1.7 :1.5
     container_name: nginx-app
     networks:
-      - extern
+      extern:
+        aliases:
+          - nginx-app
     volumes:
-      - ./data/nginx/certs:/etc/nginx/certs:ro
-      - ./data/nginx/conf:/etc/nginx/conf.d
-      - ./data/nginx/vhosts:/etc/nginx/vhost.d
-      - ./data/nginx/html:/usr/share/nginx/html
-      - ./data/nginx/dhparam:/etc/nginx/dhparam
-      # Docker-Daten lesen
+      - ${PAHT_NGINX:-./data/nginx}/certs:/etc/nginx/certs:ro
+      - ${PAHT_NGINX:-./data/nginx}/conf:/etc/nginx/conf.d
+      - ${PAHT_NGINX:-./data/nginx}/vhosts:/etc/nginx/vhost.d
+      - ${PAHT_NGINX:-./data/nginx}/html:/usr/share/nginx/html
+      - ${PAHT_NGINX:-./data/nginx}/dhparam:/etc/nginx/dhparam
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      # Template ermöglicht den Uplaod von Dateien > 1MB
       - ./nginx.template/client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
     ports:
       - 80:80
@@ -37,42 +35,84 @@ services:
     networks:
       - extern
     volumes:
-      - ./data/nginx/certs:/etc/nginx/certs:rw
-      - ./data/nginx/vhosts:/etc/nginx/vhost.d
-      - ./data/nginx/html:/usr/share/nginx/html
-      - ./data/acme:/etc/acme.sh
-      # Docker-Daten lesen
+      - ${PAHT_NGINX:-./data/nginx}/certs:/etc/nginx/certs:rw
+      - ${PAHT_NGINX:-./data/nginx}/vhosts:/etc/nginx/vhost.d
+      - ${PAHT_NGINX:-./data/nginx}/html:/usr/share/nginx/html
+      - ${PATH_SSL:-./data/acme}:/etc/acme.sh
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      - DEFAULT_EMAIL==mail@mail.com # eine Mailadresse bspw. meinewegwerfadresse@ich.de
+      - DEFAULT_EMAIL=${MAIL_SSL:-me@example.com}
       - NGINX_PROXY_CONTAINER=nginx-app
     labels:
       - com.centurylinklabs.watchtower.enable=false
     restart: always # unless-stopped
-    
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    depends_on:
+      - nginx
+      - certs
+    networks:
+      extern:
+        aliases:
+          - portainer
+    expose:
+      - "9000"
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PAHT_PORTAINER:-./data/portainer}:/data
+    environment:
+      - VIRTUAL_HOST=${NGINX_URL_PORTAINER:?Variable is not set or empty}
+      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty}
+      - VIRTUAL_PORT=${NGINX_PORT_PORTAINER:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_PORTAINER:?Variable is not set or empty}
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
     networks:
       - extern
     volumes:
-       # Docker-Daten und Zeitzone System lesen 
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/timezone:/etc/timezone:ro
-#    command: portainer plex seafile #Positivliste - nur dies Container werden aktualisiert
+    #command: portainer plex seafile #Positivliste - nur dies Container werden aktualisiert
     environment:
-#      - WATCHTOWER_SCHEDULE=0 0 0 * * *
+      #- WATCHTOWER_SCHEDULE=0 0 0 * * *
       - WATCHTOWER_POLL_INTERVAL=3600
-#      - WATCHTOWER_NO_PULL
+      #- WATCHTOWER_NO_PULL
       - WATCHTOWER_CLEANUP=true
-#      - WATCHTOWER_MONITOR_ONLY=true
-#      - WATCHTOWER_LABEL_ENABLE=true
-#      - WATCHTOWER_DEBUG=true
-#      - WATCHTOWER_NOTIFICATIONS=email
-#      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=<MAILADRESSE>
-#      - WATCHTOWER_NOTIFICATION_EMAIL_TO=<MAILADRESSE>
-#      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=<SMTP-SERVER>
-#      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=<***>
-#      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=<***>
-#      - TZ=Europe/Berlin
+      #- WATCHTOWER_MONITOR_ONLY=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_DEBUG=false
+      #- WATCHTOWER_LOG_FORMAT=Auto #Auto, LogFmt, Pretty or JSON | Default: Auto
+      #- WATCHTOWER_LOG_LEVEL=debug # panic, fatal, error, warn, info, debug or trace | Default: info
     restart: unless-stopped
+
+  adguard:
+    #Hinweis
+    #bei ersten Start http://192.168.178.30:3000 aufrufen und 
+    #Netzwerkschnittstell für Admin-Weboberfläche auf alle Port 90 stellen
+    image: adguard/adguardhome
+    container_name: adguard
+    depends_on:
+      - nginx
+      - certs
+    network_mode: "host"
+    volumes:
+      - ${PAHT_ADGUARD:-./data/adguard}/work:/opt/adguardhome/work
+      - ${PAHT_ADGUARD:-./data/adguard}/conf:/opt/adguardhome/conf
+    environment:
+      - VIRTUAL_HOST=${NGINX_URL_ADGUARD:?Variable is not set or empty}
+      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty}
+      - VIRTUAL_PORT=${NGINX_PORT_ADGUARD:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_ADGUARD:?Variable is not set or empty}
+      - TZ="Berlin/Europe"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    restart: always
