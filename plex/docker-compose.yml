@@ -32,10 +32,10 @@ services:
 #      - 5343:5353/udp #for older Bonjour/Avahi network discovery
     environment:
       - TZ="Europe/Berlin"
-      - ADVERTISE_IP=http://domain.de:32400/ # Domain bspw. plex.dyndns.de
+      - ADVERTISE_IP=http://plex.example.com:32400/ # Domain bspw. plex.dyndns.de
       - VIRTUAL_PORT=32400
-      - VIRTUAL_HOST=domain.de # Domain bspw. plex.dyndns.de
-      - LETSENCRYPT_HOST=domain.de # Domain bspw. plex.dyndns.de
+      - VIRTUAL_HOST=plex.example.com # Domain bspw. plex.dyndns.de
+      - LETSENCRYPT_HOST=plex.example.com # Domain bspw. plex.dyndns.de
        #nur bei Neuanlegen des Servers wichtig um Server gene plex.tv zu legitimieren
        #Eintrag wird bei registriertem Server ignoriert
 #      - PLEX_CLAIM=claim-xxxx_XXXXXX-ssL
