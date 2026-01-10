@@ -9,20 +9,24 @@ services:
     image: nginxproxy/nginx-proxy # : 1.7 :1.5
     container_name: nginx-app
     networks:
-      extern:
-        aliases:
-          - nginx-app
+      - extern
     volumes:
       - ${PAHT_NGINX:-./data/nginx}/certs:/etc/nginx/certs:ro
       - ${PAHT_NGINX:-./data/nginx}/conf:/etc/nginx/conf.d
       - ${PAHT_NGINX:-./data/nginx}/vhosts:/etc/nginx/vhost.d
       - ${PAHT_NGINX:-./data/nginx}/html:/usr/share/nginx/html
       - ${PAHT_NGINX:-./data/nginx}/dhparam:/etc/nginx/dhparam
+      - ${PAHT_NGINX:-./data/nginx}/logs:/var/log/nginx
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./nginx.template/client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
+      # - ./nginx.template/client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
     ports:
       - 80:80
       - 443:443
+    logging:
+      driver: "local"
+      options:
+        max-size: "50m"      # maximale Größe einer Logdatei
+        max-file: "5"        # Anzahl der rotierenden Dateien
     labels:
       - com.centurylinklabs.watchtower.enable=true
     restart: unless-stopped
@@ -48,33 +52,46 @@ services:
     restart: always # unless-stopped
 
   portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
+    image: portainer/portainer-ce:latest #portainer-ce:latest
+    container_name: portainer_app
     depends_on:
       - nginx
       - certs
+      - portainer_agent
     networks:
-      extern:
-        aliases:
-          - portainer
+      - extern
+      - portainer
     expose:
       - "9000"
     ports:
-      - 9000:9000
+      - 9000:9000 # Notfallzugriff über IP:9000
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ${PAHT_PORTAINER:-./data/portainer}:/data
     environment:
+      - LOG_LEVEL=debug
       - VIRTUAL_HOST=${NGINX_URL_PORTAINER:?Variable is not set or empty}
-      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty}
-      - VIRTUAL_PORT=${NGINX_PORT_PORTAINER:?Variable is not set or empty}
+      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty} # extern
+      - VIRTUAL_PORT=${NGINX_PORT_PORTAINER:?Variable is not set or empty} # 9000
       - LETSENCRYPT_HOST=${NGINX_URL_PORTAINER:?Variable is not set or empty}
     labels:
       - com.centurylinklabs.watchtower.enable=true
     restart: unless-stopped
 
+  portainer_agent:
+    image: portainer/agent:latest # 2.21.0
+    container_name: portainer_agent
+    networks:
+      - portainer
+    expose:
+      - "9001"  # nur für interne Netzwerke, NICHT nach außen
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower # containrrr/watchtower
     container_name: watchtower
     networks:
       - extern
@@ -85,13 +102,9 @@ services:
     environment:
       #- WATCHTOWER_SCHEDULE=0 0 0 * * *
       - WATCHTOWER_POLL_INTERVAL=3600
-      #- WATCHTOWER_NO_PULL
       - WATCHTOWER_CLEANUP=true
-      #- WATCHTOWER_MONITOR_ONLY=true
       - WATCHTOWER_LABEL_ENABLE=true
-      - WATCHTOWER_DEBUG=false
-      #- WATCHTOWER_LOG_FORMAT=Auto #Auto, LogFmt, Pretty or JSON | Default: Auto
-      #- WATCHTOWER_LOG_LEVEL=debug # panic, fatal, error, warn, info, debug or trace | Default: info
+      - WATCHTOWER_NOTIFICATION_SPLIT_BY_CONTAINER=true
     restart: unless-stopped
 
   adguard:
@@ -116,3 +129,24 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     restart: always
+
+  healthcheck:
+    image: louislam/uptime-kuma
+    container_name: healthcheck
+    depends_on:
+      - nginx
+      - certs
+    networks:
+      - extern
+    expose:
+      - 3001
+    environment:
+      - VIRTUAL_PORT=${NGINX_PORT_HEALTH:?Variable is not set or empty}
+      - VIRTUAL_HOST=${NGINX_URL_HEALTH:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_HEALTH:?Variable is not set or empty}
+    volumes:
+      - ./data/healthcheck:/app/data
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
