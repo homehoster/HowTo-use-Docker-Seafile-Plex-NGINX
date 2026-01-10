@@ -1,6 +1,6 @@
-   networks:
+networks:
   seafile-net:
-    external: false
+    internal: true
   extern:
     external: true
 services:
@@ -21,20 +21,21 @@ services:
       - "80"
       - "8000"
       - "8082"
+      - "8083"
       - "8080"
     ports:
       - 8080:8080 #Freigabe Port wegen MountDAVFS intern nötig
     volumes:
-      - ./install.template/nginx.template/seafile.nginx.conf.template:/templates/seafile.nginx.conf.template:ro
+      # - ./install.template/nginx.template/seafile.nginx.conf.template:/templates/seafile.nginx.conf.template:ro
       - ./data/app:/shared
-    #    nach ersten Start kann Ordner für Daten auf eine eigene HDD separiert werden  
-    #   - ./data/app/logs:/shared//logs
-    #   - ./data/app/nginx:/shared/nginx
-    #   - ./data/app/seafile/ccnet:/shared/seafile/ccnet
-    #   - ./data/app/seafile/conf:/shared/seafile/conf
-    #   - ./data/app/seafile/logs:/shared/seafile/logs
-    #   - ./data/app/seafile/seahub-data:/shared/seafile/seahub-data
-    #   - /mnt/hdd/seafile-data:/shared/seafile/seafile-data
+    #    nach ersten Start kann Ordner für Daten auf eine eigene HDD separiert werden
+    #  - ./data/app/logs:/shared/logs
+    #  - ./data/app/nginx:/shared/nginx
+    #  - ./data/app/seafile/ccnet:/shared/seafile/ccnet
+    #  - ./data/app/seafile/conf:/shared/seafile/conf
+    #  - ./data/app/seafile/logs:/shared/seafile/logs
+    #  - ./data/app/seafile/seahub-data:/shared/seafile/seahub-data
+    #  - /mnt/bighdd/seafile/seafile-data:/shared/seafile/seafile-data 
     environment:
       - DB_HOST=${SEAFILE_MYSQL_DB_HOST:-db}
       - DB_PORT=${SEAFILE_MYSQL_DB_PORT:-3306}
@@ -44,7 +45,7 @@ services:
       - SEAFILE_MYSQL_DB_CCNET_DB_NAME=${SEAFILE_MYSQL_DB_CCNET_DB_NAME:-ccnet_db}
       - SEAFILE_MYSQL_DB_SEAFILE_DB_NAME=${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}
       - SEAFILE_MYSQL_DB_SEAHUB_DB_NAME=${SEAFILE_MYSQL_DB_SEAHUB_DB_NAME:-seahub_db}
-      - TIME_ZONE=${TIME_ZONE:-Etc/UTC}
+      - TIME_ZONE=${TIME_ZONE:-Europe/Berlin}
       # - INIT_SEAFILE_ADMIN_EMAIL=${INIT_SEAFILE_ADMIN_EMAIL:-me@example.com}
       # - INIT_SEAFILE_ADMIN_PASSWORD=${INIT_SEAFILE_ADMIN_PASSWORD:-asecret}
       - SEAFILE_SERVER_HOSTNAME=${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}
@@ -56,8 +57,8 @@ services:
       # - ENABLE_SEADOC=${ENABLE_SEADOC:-true}
       # - SEADOC_SERVER_URL=${SEAFILE_SERVER_PROTOCOL:-http}://${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}/sdoc-server
       - VIRTUAL_HOST=${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}
-      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty}
-      - VIRTUAL_PORT=${NGINX_PORT:?Variable is not set or empty}
+      - VIRTUAL_NETWORK=${NGINX_NETWORK:?Variable is not set or empty} # extern
+      - VIRTUAL_PORT=${NGINX_PORT:?Variable is not set or empty} # 80
       - LETSENCRYPT_HOST=${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}
     labels:
       # caddy: ${SEAFILE_SERVER_PROTOCOL:-http}://${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}
@@ -110,7 +111,6 @@ services:
     image: ${COLLABORA_IMAGE:-collabora/code:24.04.5.1.1}
     container_name: seafile-collabora
     networks:
-      # - seafile-net
       - extern
     expose:
       - 9980
@@ -118,10 +118,7 @@ services:
       - MKNOD
     environment:
       - DONT_GEN_SSL_CERT=true
-      # - server_name=collabora:9980 # ${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}:${COLLABORA_PORT:-6232}
       - TZ=${TIME_ZONE:-Europe/Berlin}
-      # - username=${COLLABORA_USERNAME:?Variable is not set or empty}
-      # - password=${COLLABORA_PASSWORD:?Variable is not set or empty}
       - extra_params=--o:admin_console.enable=${COLLABORA_ENABLE_ADMIN_CONSOLE:-true}
         --o:ssl.enable=false
         --o:ssl.termination=true
