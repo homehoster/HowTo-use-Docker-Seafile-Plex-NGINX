@@ -24,7 +24,7 @@ In many routers, you can set a rebind protection. This prevents requests to the 
 
 # Install Docker and Docker Compose (already available on Ubuntu)
 
-The installation is only necessary if Docker and Docker-Compose are not installed on the system yet. For testing the installed version can be displayed with the command docker -v and docker-compose -v. If no error message is displayed, the following steps can be skipped.
+The installation is only necessary if Docker and Docker Compose are not installed on the system yet. For testing the installed version can be displayed with the command docker version and docker compose version. If no error message is displayed, the following steps can be skipped.
 
 	apt-get update && apt-get -y upgrade && /
 	apt-get install -y docker && /
@@ -52,15 +52,15 @@ Start basic installation (create folder structure, install Webmin and davFS)
 
 NGINX will manage incoming and outgoing traffic and use LetsEncrypt to obtain SSL certificates fully automatically and renew them as needed. Watchtower will keep all running Docker containers up to date. The entire package is started with one line:
 
-	sudo docker-compose -f /home/docker/tools/docker-compose.yml up -d
+	sudo docker compose -f /home/docker/tools/compose.yml up -d
 
 # Seafile
 
-Some manual work is necessary to start the Seafile container. First, the docker-compose.yml file must be adapted for the first start. After that, some Seafile config files have to be adapted and the docker-compose.yml file fine-tuned if necessary.
+Some manual work is necessary to start the Seafile container. First, the compose.yml file must be adapted for the first start. After that, some Seafile config files have to be adapted and the compose.yml file fine-tuned if necessary.
 
-- Adjusting the docker-compose.yml file
+- Adjusting the compose.yml file
 		
-		sudo nano /home/docker/seafile/docker-compose.yml 
+		sudo nano /home/docker/seafile/compose.yml 
 
 	adapt the following lines:
 	
@@ -84,17 +84,17 @@ Some manual work is necessary to start the Seafile container. First, the docker-
 
 - now Seafile can start for the first time - without the detach flag "-d" to observe the complete start-up
 
-		sudo docker-compose -f /home/docker/seafile/docker-compose.yml up
+		sudo docker compose -f /home/docker/seafile/compose.yml up
 		
 - after the complete start, the container is stopped with Ctrl + C and cleaned up with the following command:
 
-		sudo docker-compose -f /home/docker/seafile/docker-compose.yml down
+		sudo docker compose -f /home/docker/seafile/compose.yml down
 
-- Adjusting the docker-compose.yml 
+- Adjusting the compose.yml 
 
-	The following adaptation of the docker-compose.yml ensures that the database and config files are still stored on the SSD with the operating system while the data is stored on an HDD. It is important that the folder /mnt/hdd1/seafile-data exists. This folder will store all data on Seafile.
+	The following adaptation of the compose.yml ensures that the database and config files are still stored on the SSD with the operating system while the data is stored on an HDD. It is important that the folder /mnt/hdd1/seafile-data exists. This folder will store all data on Seafile.
 
-		sudo nano /home/docker/seafile/docker-compose.yml 
+		sudo nano /home/docker/seafile/compose.yml 
 	
 	adjust the following lines:
 	
@@ -171,16 +171,16 @@ Some manual work is necessary to start the Seafile container. First, the docker-
 
 - Finally, restart Seafile and run it as a service
 
-		sudo docker-compose -f /home/docker/seafile/docker-compose.yml up -d
+		sudo docker compose -f /home/docker/seafile/compose.yml up -d
 
 # Plex
 
-Some manual work is necessary to start the Plex container. First, the docker-compose.yml file must be changed for the first start. On the first start, a claim code is necessary so that the login to your own account works.
+Some manual work is necessary to start the Plex container. First, the compose.yml file must be changed for the first start. On the first start, a claim code is necessary so that the login to your own account works.
 
 Call up plex.tv/claim/ copy the displayed code and paste it into the following file, among others
 (Attention: Code is only valid for 4 minutes)
 
-		sudo nano /home/docker/plex/docker-compose.yml
+		sudo nano /home/docker/plex/compose.yml
 
 Add the following information:
 
@@ -204,4 +204,4 @@ Add the following information:
 
 Start Plex container and call it up in the browser after a few minutes - and ready hurray
 
-	sudo docker-compose -f /home/docker/plex/docker-compose.yml up -d
+	sudo docker compose -f /home/docker/plex/compose.yml up -d
