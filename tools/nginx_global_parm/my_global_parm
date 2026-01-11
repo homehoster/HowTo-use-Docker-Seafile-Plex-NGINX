@@ -1,5 +1,5 @@
 # Globale Nginx Konfigurationsdatei
-# Doku: https://github.com/nginx-proxy/nginx-proxy/tree/main/docs#configuration-summary
+# Dokumentation: https://github.com/nginx-proxy/nginx-proxy/tree/main/docs#configuration-summary
 
 # Maximale Größe für Client-Body (z.B. bei Datei-Uploads) für alle Server-Blöcke
 # Test: curl -v -H "Content-Length: 543687091200" -H "Expect: 100-continue" -X POST https://service.exmple.com/
