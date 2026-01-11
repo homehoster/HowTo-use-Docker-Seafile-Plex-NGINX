@@ -21,6 +21,7 @@ services:
       - ${PAHT_NGINX:-./data/nginx}/html:/usr/share/nginx/html
       - ${PAHT_NGINX:-./data/nginx}/dhparam:/etc/nginx/dhparam
       - ${PAHT_NGINX:-./data/nginx}/logs:/var/log/nginx
+      - ./nginx_global_parm/my_global_conf.conf:/etc/nginx/conf.d/my_global_conf.conf:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
     environment:
       - ENABLE_HTTP2=false
