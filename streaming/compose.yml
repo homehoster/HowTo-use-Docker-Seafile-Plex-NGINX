@@ -1,0 +1,90 @@
+networks:
+  extern:
+    external: true
+    
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: stream_jellyfin
+    volumes:
+      - ${JELLYFIN_PATH:-./data/jellyfin}/config:/config
+      - ${JELLYFIN_PATH:-./data/jellyfin}/cache:/cache
+      - /mnt/bighdd/Medien:/media:ro
+    ports:
+      - "8096:8096"   # Zugriff im Browser: http://hostname:8096
+    networks:
+      - extern
+      - stream-net
+    environment:
+      - TZ="Europe/Berlin"
+      - JELLYFIN_PublishedServerUrl=http://${NGINX_URL_JELLYFIN:?Variable is not set or empty}
+      - VIRTUAL_PORT=${NGINX_PORT_JELLYFIN:?Variable is not set or empty}
+      - VIRTUAL_HOST=${NGINX_URL_JELLYFIN:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_JELLYFIN:?Variable is not set or empty}
+    devices:
+      - "/dev/dri:/dev/dri"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
+
+  plex:
+    image: plexinc/pms-docker
+    container_name: stream_plex
+    networks:
+      - extern
+    volumes:
+      - ${PLEX_PATH:-./data/plex}/db:/config
+      - ${PLEX_PATH:-./data/plex}/transcode/temp:/transcode
+      - /mnt/bighdd/Medien:/data
+    ports:
+      #WICHTIGER HINWEIS: im Router muss Port 32400/tcp freigegeben werden
+      - 32400:32400/tcp #for access to the Plex Media Server) [required]
+      - 3005:3005/tcp #for controlling Plex Home Theater via Plex Companion
+      - 8324:8324/tcp #for controlling Plex for Roku via Plex Companion
+      - 32469:32469/tcp #for access to the Plex DLNA Server
+      - 1900:1900/udp #for access to the Plex DLNA Server
+      - 32410:32410/udp #for current GDM network discovery
+      - 32412:32412/udp #for current GDM network discovery
+      - 32413:32413/udp #for current GDM network discovery
+      - 32414:32414/udp #for current GDM network discovery
+      - 33443:33443
+    environment:
+      - TZ="Europe/Berlin"
+      - ADVERTISE_IP=http://${NGINX_URL_PLEX:?Variable is not set or empty}:${NGINX_PORT_PLEX:?Variable is not set or empty}/
+      - VIRTUAL_PORT=${NGINX_PORT_PLEX:?Variable is not set or empty}
+      - VIRTUAL_HOST=${NGINX_URL_PLEX:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_PLEX:?Variable is not set or empty}
+       #nur bei Neuanlegen des Servers wichtig um Server gene plex.tv zu legitimieren
+       #Eintrag wird bei registriertem Server ignoriert
+#      - PLEX_CLAIM=claim-xxxx_xxxxxxx-ssL
+    hostname: DavidsPlex
+    devices:
+      - "/dev/dri:/dev/dri"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
+
+  audiobook:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: stream_audiobook
+    expose:
+      - 80
+    networks:
+      - extern
+    volumes:
+      # - ./data/audiobook/music/Hoerbuecher:/audiobooks
+      - /mnt/bighdd/Medien//Hörbücher:/audiobooks
+      # - ./data/audiobook/music/Hoerbuecher_Kinder:/audiobooks1
+      - ${AUDIOBOOK_PATH:-./data/audiobook}/media/podcast:/podcasts
+      - ${AUDIOBOOK_PATH:-./data/audiobook}/appdata/config:/config
+      - ${AUDIOBOOK_PATH:-./data/audiobook}/appdata/metadata:/metadata
+    environment:
+      - TZ=Europe/Berlin
+      - PUID=1026
+      - PGID=100
+      - VIRTUAL_PORT=${NGINX_PORT_AUDIOBOOK:?Variable is not set or empty}
+      - VIRTUAL_HOST=${NGINX_URL_AUDIOBOOK:?Variable is not set or empty}
+      - LETSENCRYPT_HOST=${NGINX_URL_AUDIOBOOK:?Variable is not set or empty}
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
