@@ -10,6 +10,10 @@ services:
     container_name: nginx-app
     networks:
       - extern
+    ports:
+      - 80:80
+      - 443:443/tcp
+      # - 443:443/udp # später nötig für HTTP3 --> merken dann in wireguard Port ändern
     volumes:
       - ${PAHT_NGINX:-./data/nginx}/certs:/etc/nginx/certs:ro
       - ${PAHT_NGINX:-./data/nginx}/conf:/etc/nginx/conf.d
@@ -18,10 +22,9 @@ services:
       - ${PAHT_NGINX:-./data/nginx}/dhparam:/etc/nginx/dhparam
       - ${PAHT_NGINX:-./data/nginx}/logs:/var/log/nginx
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      # - ./nginx.template/client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
-    ports:
-      - 80:80
-      - 443:443
+    environment:
+      - ENABLE_HTTP2=false
+      # - ENABLE_HTTP3=true
     logging:
       driver: "local"
       options:
