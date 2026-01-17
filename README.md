@@ -169,37 +169,4 @@ Some manual work is necessary to start the Seafile container. First, the compose
 
 - Finally, restart Seafile and run it as a service
 
-		sudo docker compose -f /home/docker/seafile/compose.yml up -d
-
-# Plex
-
-Some manual work is necessary to start the Plex container. First, the compose.yml file must be changed for the first start. On the first start, a claim code is necessary so that the login to your own account works.
-
-Call up plex.tv/claim/ copy the displayed code and paste it into the following file, among others
-(Attention: Code is only valid for 4 minutes)
-
-		sudo nano /home/docker/plex/compose.yml
-
-Add the following information:
-
-	services:
-	  plex:
-	    [...]
-	    volumes:
-	    [...]
-	      - <PATH to MEDIA files /mnt/hdd2/media...>:/data #the films are located here
-	    [...]
-	    environment:
-	    [...]
-	      - ADVERTISE_IP=http://plex.dyndns.de:32400/ # enter URL from DynDNS service
-	      - VIRTUAL_PORT=32400
-	      - VIRTUAL_HOST=plex.dyndns.de # Enter URL from DynDNS service
-	      - LETSENCRYPT_HOST=plex.dyndns.de # Enter URL of DynDNS service
-	      - LETSENCRYPT_EMAIL=meinewegwerfadresse@ich.de # your mail address
-	       #only important when creating a new server to legitimise server gene plex.tv
-	       #entry will be ignored if server is registered - can be commented out
-	      - PLEX_CLAIM=claim-xxxx_XXXX-ssL #paste the code from plex.tv/claim/ completely here
-
-Start Plex container and call it up in the browser after a few minutes - and ready hurray
-
-	sudo docker compose -f /home/docker/plex/compose.yml up -d
+		sudo docker compose -f /home/docker/seafile/*.yml up -d
