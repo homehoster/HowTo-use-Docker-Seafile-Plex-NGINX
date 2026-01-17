@@ -15,8 +15,6 @@ To ensure that requests from the network are not blocked by the firewall, certai
 
 - Port 80 (TCP)    	- mandatory for HTTP requests.
 - Port 443 (TCP)   	- mandatory for HTTPS requests
-- Port 32400 (TCP) 	- optionally necessary for Plex, so that Plex apps (e.g. FireStick, some TVs) are working.
-- Port 32400 (UDP)	- optionally necessary for Plex, so that Plex apps (e.g. FireStick, some TVs) are working.
 
 # Rebind protection
 
