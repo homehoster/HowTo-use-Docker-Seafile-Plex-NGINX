@@ -1,0 +1,37 @@
+services:
+  seafile-md-server:
+    image: ${MD_IMAGE:-seafileltd/seafile-md-server:13.0-latest}
+    container_name: seafile-md-server
+    networks:
+      - seafile-net
+    expose:
+      - "${MD_PORT:-8084}"
+    #ports:
+      # - ${MD_PORT:-8084}:${MD_PORT:-8084}
+    depends_on:
+      db:
+        condition: service_healthy
+      seafile:
+        condition: service_healthy
+    volumes:
+      - ${SEAFILE_VOLUME:-/opt/seafile-data}:/shared
+    environment:
+      - SEAFILE_MYSQL_DB_HOST=${SEAFILE_MYSQL_DB_HOST:-db}
+      - SEAFILE_MYSQL_DB_PORT=${SEAFILE_MYSQL_DB_PORT:-3306}
+      - SEAFILE_MYSQL_DB_USER=${SEAFILE_MYSQL_DB_USER:-seafile}
+      - SEAFILE_MYSQL_DB_PASSWORD=${SEAFILE_MYSQL_DB_PASSWORD:?Variable is not set or empty}
+      - SEAFILE_MYSQL_DB_SEAFILE_DB_NAME=${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?Variable is not set or empty}
+      - SEAFILE_LOG_TO_STDOUT=${SEAFILE_LOG_TO_STDOUT:-false}
+      - MD_PORT=${MD_PORT:-8084}
+      - MD_LOG_LEVEL=${MD_LOG_LEVEL:-info}
+      - MD_MAX_CACHE_SIZE=${MD_MAX_CACHE_SIZE:-1GB}
+      - MD_CHECK_UPDATE_INTERVAL=${MD_CHECK_UPDATE_INTERVAL:-30m}
+      - MD_FILE_COUNT_LIMIT=${MD_FILE_COUNT_LIMIT:-100000}
+      - CACHE_PROVIDER=${CACHE_PROVIDER:-redis}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    restart: unless-stopped
