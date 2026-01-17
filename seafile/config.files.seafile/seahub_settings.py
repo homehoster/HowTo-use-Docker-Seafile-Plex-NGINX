@@ -41,4 +41,9 @@ ENABLE_OFFICE_WEB_APP_EDIT = True
 # types of files should be editable through LibreOffice Online
 OFFICE_WEB_APP_EDIT_FILE_EXTENSION = ('odp', 'ods', 'odt', 'xls', 'xlsb', 'xlsm', 'xlsx','ppsx', 'ppt', 'pptm', 'pptx', 'doc', 'docm', 'docx')
 
+# Enable Metadata Management
+ENABLE_METADATA_MANAGEMENT = True
+METADATA_SERVER_URL = 'http://seafile-md-server:8084'
 
+# video thumbnails (disabled by default)
+ENABLE_VIDEO_THUMBNAIL = False
